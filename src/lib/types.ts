@@ -1,8 +1,3 @@
-export type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
-
 export type ProjectBrief = {
   objetivo: string;
   publicoAlvo: string;

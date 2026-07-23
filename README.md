@@ -55,9 +55,9 @@ Abra http://localhost:3000, crie uma conta em `/signup` e clique em
 
 ## Fluxo do MVP
 
-1. **Onboarding** — chat guiado pela IA (papel de Produtor Executivo) até montar
-   um brief estruturado (objetivo, público, formato, orçamento, prazo, idioma,
-   referências, estilo narrativo, recursos e pipeline de produção).
+1. **Onboarding** — wizard de 8 passos com opções fixas (chips de seleção única/múltipla)
+   até montar um brief estruturado (objetivo, formato, público, orçamento, prazo, idioma,
+   estilo narrativo, recursos e pipeline de produção). Sem IA nessa etapa — é determinístico.
 2. **Writers' Room** — pipeline sequencial de agentes (`src/lib/agents/pipeline.ts`):
    Diretor define a visão criativa → Roteirista escreve o pacote narrativo completo
    → Script Doctor refina ritmo/subtexto/estrutura → Produtor Executivo ajusta
@@ -77,12 +77,12 @@ src/
       onboarding/                      # turno de chat do onboarding
       projects/[id]/generate/          # streaming da writers' room (SSE)
       projects/[id]/export/            # export em Markdown
-  components/                 # Chat, WritersRoom, MarkdownView, Nav, etc.
+  components/                 # OnboardingWizard, WritersRoom, MarkdownView, Nav, etc.
   lib/
     agents/
       prompts.ts               # system prompts de cada papel
-      onboarding.ts            # lógica do turno de onboarding
       pipeline.ts               # orquestrador da writers' room
+    onboarding-options.ts      # opções fixas do wizard
     supabase/                  # clients browser/server
     types.ts
 supabase/migrations/0001_init.sql  # schema do banco

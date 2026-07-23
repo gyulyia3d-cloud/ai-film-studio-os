@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ChatOnboarding } from "@/components/ChatOnboarding";
+import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { WritersRoom } from "@/components/WritersRoom";
 import type { DocType, DocumentRow, Project, ProjectBrief } from "@/lib/types";
 
@@ -56,10 +56,7 @@ export default async function ProjectPage({
       </div>
 
       {typedProject.status === "onboarding" && (
-        <ChatOnboarding
-          projectId={projectId}
-          initialConversation={briefRow?.conversation ?? []}
-        />
+        <OnboardingWizard projectId={projectId} />
       )}
 
       {typedProject.status !== "onboarding" && brief && (

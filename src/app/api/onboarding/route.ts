@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { runOnboardingTurn } from "@/lib/agents/onboarding";
-import type { ChatMessage } from "@/lib/types";
+import type { ProjectBrief } from "@/lib/types";
 
 export async function POST(request: Request) {
-  const { projectId, message } = (await request.json()) as {
+  const { projectId, brief } = (await request.json()) as {
     projectId: string;
-    message?: string;
+    brief: ProjectBrief;
   };
 
-  if (!projectId) {
-    return NextResponse.json({ error: "projectId é obrigatório" }, { status: 400 });
+  if (!projectId || !brief) {
+    return NextResponse.json(
+      { error: "projectId e brief são obrigatórios" },
+      { status: 400 }
+    );
   }
 
   const supabase = await createClient();
@@ -24,7 +26,7 @@ export async function POST(request: Request) {
 
   const { data: briefRow, error: briefFetchError } = await supabase
     .from("project_briefs")
-    .select("*")
+    .select("id")
     .eq("project_id", projectId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -37,37 +39,27 @@ export async function POST(request: Request) {
     );
   }
 
-  const conversation: ChatMessage[] = briefRow.conversation ?? [];
-  if (message) {
-    conversation.push({ role: "user", content: message });
-  }
-
-  const result = await runOnboardingTurn(conversation);
-  conversation.push({ role: "assistant", content: result.message });
-
   const { error: updateError } = await supabase
     .from("project_briefs")
-    .update({
-      conversation,
-      brief: result.brief,
-      is_final: result.done,
-    })
+    .update({ brief, is_final: true })
     .eq("id", briefRow.id);
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  if (result.done && result.brief) {
-    await supabase
-      .from("projects")
-      .update({
-        status: "brief_ready",
-        title: result.brief.ideiaInicial?.slice(0, 80) || "Projeto sem título",
-        format: result.brief.formato ?? null,
-      })
-      .eq("id", projectId);
+  const { error: projectUpdateError } = await supabase
+    .from("projects")
+    .update({
+      status: "brief_ready",
+      title: brief.ideiaInicial?.slice(0, 80) || "Projeto sem título",
+      format: brief.formato ?? null,
+    })
+    .eq("id", projectId);
+
+  if (projectUpdateError) {
+    return NextResponse.json({ error: projectUpdateError.message }, { status: 500 });
   }
 
-  return NextResponse.json(result);
+  return NextResponse.json({ ok: true });
 }
