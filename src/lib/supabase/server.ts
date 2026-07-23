@@ -1,0 +1,30 @@
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+
+// Server-side Supabase client, escopado ao usuário autenticado via cookies.
+// Todas as leituras/escritas passam pelas policies de RLS do banco.
+export async function createClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // chamado de um Server Component sem permissão de escrita de cookies;
+            // o proxy.ts cuida de renovar a sessão nesses casos.
+          }
+        },
+      },
+    }
+  );
+}
